@@ -20,33 +20,36 @@ router.get("/", async (req, res) => {
 
 // La ruta GET /:pid deberá traer sólo el producto con el id proporcionado [X]
 router.get("/:pid", async (req, res) => {
-    const id = parseInt(req.params.pid) // ¿Esto sería buena practica? o es mejor hacer destructuring y luego crear una nueva constante para hacer el parseInt?
-    const product =  await productManager.getProductById(id);
+    const { pid } = req.params; //string
+    
+    const product =  await productManager.getProductById(pid);
+    
     res.json(product)
 })
 
 
 //La ruta raíz POST / deberá agregar un nuevo producto con los campos:
 // ID (Autogenerado), title, description, code, price, status, stock, category, thumbnails, status
-router.post("/", (req, res) => {
-    console.log(req.query)
-    res.send("Intentando agregar un elemento")
+router.post("/", async (req, res) => {
+    const {title, description, code, price, status=true, stock, category, thumbnails} = req.body;
+    const response = await productManager.addProducts({title, description, code, price, status, stock, category, thumbnails})
+    res.json(response)
 })
 
 
 // La ruta DELETE /:pid deberá eliminar el producto con el pid indicado. 
-router.delete("/:pid", (req, res) =>{   
-    const id = parseInt(req.params.pid)
+router.delete("/:pid", async (req, res) =>{   
+    const id = req.params.pid
+    const response = await productManager.deleteProducts(id)
+    res.json(response)
+})
 
-    const index = products.findIndex(product=> product.id === id)
-    
-    if(index === -1){
-        return res.status(404).json({error:'Item no encontrado'});
-    }
 
-    products.splice(index, 1);
-
-    res.send(`Producto ${id} eliminado`)
+router.put("/:pid", async (req, res) => {
+    const { pid } = req.params
+    const newData = req.body
+    const response = await productManager.updateProduct(pid, newData);
+    res.json(response)
 })
 
 export default router
