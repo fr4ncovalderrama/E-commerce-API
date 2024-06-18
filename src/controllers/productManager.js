@@ -29,7 +29,6 @@ export default class ProductManager{
                 const limitedProducts = products.slice(0, limit);
                 return limitedProducts
             }
-
             return products
         } catch(error){
             console.error('Error al obtener los products', error)
@@ -49,7 +48,7 @@ export default class ProductManager{
 
 
     //Todos los campos deben son obligatorios a expepción de thumbnails
-    addProducts = async ({title, description, code, price, status, stock, category, thumbnails}) => {
+    addProducts = async ({title, description, code, price, status=true, stock, category, thumbnails=[]}) => {
         try{
             if (!title || !description || !code || !price || !status || !stock || !category) {
                 throw new Error("Todos los campos son obligatorio excepto los thumbnails")

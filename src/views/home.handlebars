@@ -1,1 +1,17 @@
-<h1>Primera plantilla</h1>
+    <div class="container">
+      <h1 class="my-4">Listado de productos</h1>
+      <div class="row">
+        {{#each products}}
+          <div class="col-sm-6">
+              <div class="card">
+                  <div class="card-body">
+                      <h3 class="card-title">{{this.title}}</h3>
+                      <p class="card-text">$<strong>${{this.price}}</strong></p>
+                      <p class="card-text">Stock:{{this.stock}}</p>
+                      <p class="card-text">{{this.description}}</p>
+                  </div>
+              </div>
+          </div>    
+        {{/each}}
+    </div>
+    </ul>

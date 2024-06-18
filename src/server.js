@@ -1,30 +1,38 @@
 
 import express from "express";
-import { productsRouter, cartRouter } from './routes/index.js';
+// Routers
+import { productsRouter, cartRouter, viewsRouter } from './routes/index.js';
+// Managers
 import { ProductManager, CartManager } from './controllers/index.js';
-import handlebarsConfig from "./config/handlebars.config.js";
+//Config
+import handlebars from "./config/handlebars.config.js";
+import serverSocket from './config/socket.config.js'
 
 
 const app = express();
 const port = 8080;
 
+// Seteando handlebars
+handlebars.config(app)
 
-handlebarsConfig.config(app)
 
-app.use(express.json());
+//Middleware
+app.use(express.json('public'));
 
+// Inicializando y exportando Managers
 export const productManager = new ProductManager();
 export const cartManager = new CartManager();
 
-
-//Este habría que pasarlo al  productsRouter
-app.get('/realtimeproducts', (req, res) => {
-  res.render('realTimeProducts', {})
-})
-
+//Routers
 app.use('/api/products', productsRouter)
 app.use('/api/carts', cartRouter)
+app.use('/', viewsRouter)
 
-app.listen(port, () => {
+
+const serverHTTP = app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
 });
+
+
+//Configurand Web Socket
+serverSocket.config(serverHTTP)

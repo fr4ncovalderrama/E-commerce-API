@@ -1,1 +1,90 @@
-<h1>Listado de productos con WebSocket</h1>
+<section class="realtimeproducto">
+    <div class="container">
+        <h1 class="my-4">Listado de productos con WebSocket</h1>
+        <div class="row">
+            <div class="col-12 col-lg-8">
+                <div class="product-list">
+                    <div class="row">
+                        {{!-- Acá van los products --}}
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-4">
+                  <div id="form-container">
+                        <h2>Agregue un Producto:</h2>
+                        <form id="form" method="post">
+                        <input class="form-control" name="title" type="text" placeholder="Título" required>
+                        <textarea class="form-control" name="description" placeholder="Descripción" style="height: 100px"></textarea>
+                        <input class="form-control" name="code" type="text" placeholder="Código" required>
+                        <input class="form-control" name="price" type="number" placeholder="Precio" required>
+                        <input class="form-control" name="stock" type="number" placeholder="Stock" required>
+                        <input class="form-control" name="category" type="text" placeholder="Categoría" required>
+                        <div id="submitInput-container">
+                            <button class="btn btn-primary" type="submit">Agregar Producto</button>
+                        </div>
+                    </form>
+                    </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    const socket = io();
+
+    // Función para cargar productos
+    const cargarProductos = (products) => {
+        const productsContainer = document.querySelector('.product-list .row');
+        productsContainer.innerHTML = '';
+        products.forEach((product) => {
+            const productCard = `
+            <div class="col-sm-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title">${product.title}</h3>
+                        <p class="card-text">$<strong>${product.price}</strong></p>
+                        <p class="card-text">Stock: ${product.stock}</p>
+                        <p class="card-text">${product.description}</p>
+                        <a href="#" class="btn btn-secondary delete-product" data-id="${product.id}">Eliminar</a>
+                    </div>
+                </div>
+            </div>      
+            `;
+            productsContainer.innerHTML += productCard;
+        });
+
+        const deleteButtons = document.querySelectorAll('.delete-product');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                const productId = event.target.getAttribute('data-id');
+                socket.emit('deleteProduct',  productId );
+            });
+        });
+    };
+
+    // Escuchar evento 'products' para cargar productos
+    socket.on('products', (products) => {
+        cargarProductos(products);
+    });
+
+
+    //Add product
+    document.getElementById('form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        console.log(formData)
+        const productData = {};
+        formData.forEach((value, key) => {
+            productData[key] = value;
+        });
+        console.log(productData)
+        socket.emit('addProduct', productData);
+        event.target.reset();
+    });
+
+
+</script>
