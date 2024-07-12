@@ -1,113 +1,137 @@
 
-import {v4 as uuidv4} from 'uuid'
-import fs from "fs";
-import path from "path";
+
+import mongoDB from "../config/mongoose.config.js"
+import ProductModel from '../models/product.model.js';
+
+import {
+    ERROR_INVALID_ID,
+    ERROR_NOT_FOUND_ID,
+} from "../constants/messages.constant.js";
 
 
 export default class ProductManager{
+
+    #productModel
+
     constructor(){
-        this.path = path.join("src/files", "products.json");
-        this.products = []
-        this.checkFile()
-    }
-
-    
-    checkFile = async () =>{
-        if (!fs.existsSync(this.path)) {
-            await fs.promises.writeFile(this.path, "[]");
-            console.log("Archivo Creado")
-        }
+        this.#productModel = ProductModel;
     }
     
-    getProducts = async (limit) => {
-        try{
-            const productsJSON = await fs.promises.readFile(this.path, "utf8")    
-            const products = JSON.parse(productsJSON)
+    getProducts = async (paramFilters) => {
+        try {
+            
+            const $and = [];
+                
+            if (paramFilters?.title) $and.push({ title:  paramFilters.title });
+            if (paramFilters?.category) $and.push({ category:  paramFilters.category });
+            if (paramFilters?.status) $and.push({ status:  paramFilters.status });
+            
+            const filters = $and.length > 0 ? { $and } : {};
 
-            // ¿Está bien que trate esta lógica acá o debería hacerlo desde el products.route?
-            if(Number.isInteger(limit) && limit > 0){
-                const limitedProducts = products.slice(0, limit);
-                return limitedProducts
-            }
-            return products
-        } catch(error){
-            console.error('Error al obtener los products', error)
+            const sort = {
+                asc: { price: 1 },
+                desc: { price   : -1 },
+            };
+
+            const paginationOptions = {
+                limit: paramFilters.limit ?? 10,
+                page: paramFilters.page ?? 1,
+                sort: sort[paramFilters?.sort] ?? {},
+                lean: true,
+                // populate: "courses",
+            };
+
+            const productsFound = await this.#productModel.paginate(filters, paginationOptions);
+            return productsFound;
+
+
+        } catch (error) {
+            throw new Error(error.message);
         }
     }
 
     getProductById = async (id) => {
         try{
-            const products = await this.getProducts()
-            return products.find(product => product.id === id)
+            if (!mongoDB.isValidID(id)) {
+                throw new Error(ERROR_INVALID_ID);
+            }
+            const productFound = await this.#productModel.findById(id);
 
+            if (!productFound) {
+                throw new Error(ERROR_NOT_FOUND_ID);
+            }
+            
+            return productFound;
         } catch(error){
-            console.error('Error al obtener producto por ID', error)
+            throw new Error(error.message);
         }
 
     }
 
 
-    //Todos los campos deben son obligatorios a expepción de thumbnails
-    addProducts = async ({title, description, code, price, status=true, stock, category, thumbnails=[]}) => {
+    addProducts = async (data) => {
         try{
-            if (!title || !description || !code || !price || !status || !stock || !category) {
-                throw new Error("Todos los campos son obligatorio excepto los thumbnails")
-            }
+            const productCreated = new ProductModel(data)
+            await productCreated.save();
 
-            const id = uuidv4();
-            let newProduct = {id, title, description, code, price, status, stock, category, thumbnails}
-    
-            this.products = await this.getProducts();
-            this.products.push(newProduct)
-    
-            await fs.promises.writeFile(this.path, JSON.stringify(this.products))
-            return newProduct
+            return productCreated;
         } catch(error){
-            console.error('Error al agregar el producto', error)
-            return null;
+            throw new Error(error.message);
         }
     }
 
 
     deleteProducts= async (id) =>{
-        try{
-            const products = await this.getProducts();
-            const index = products.findIndex(product=> product.id === id)
-            
-            if(index !== -1){
-                products.splice(index, 1)
-                await fs.promises.writeFile(this.path, JSON.stringify(products))
-                return true
-            } else{
-                console.log("Producto no encontrado")
-                return false
+        try {
+            if (!mongoDB.isValidID(id)) {
+                throw new Error(ERROR_INVALID_ID);
             }
-        } catch(error){
-            console.error('Error al eliminar el producto', error)
-            return false
-        }
 
+            const productFound = await this.#productModel.findById(id);
+
+            if(!productFound){
+                throw new Error(ERROR_NOT_FOUND_ID);
+            }
+            
+            await this.#productModel.findByIdAndDelete(id);
+            return productFound;
+
+        } catch (error) {
+            throw new Error(error.message);
+        }
 
     }
 
     updateProduct = async (id, data) =>{
-        try{
-            const products = await this.getProducts();
-            const index = products.findIndex(product=> product.id === id)
-    
-            if(index !== -1){
-                products[index] = {id, ...data}
-                await fs.promises.writeFile(this.path, JSON.stringify(products))
-            } else{
-                console.log("Producto no encontrado")
+
+        try {
+            if (!mongoDB.isValidID(id)) {
+                throw new Error(ERROR_INVALID_ID);
             }
 
-            return "Producto actualizado"
-        } catch(error){
-            console.error("Error al actualizar el producto")
+            const productFound = await this.#productModel.findById(id);
+
+            if (!productFound) {
+                throw new Error(ERROR_NOT_FOUND_ID);
+            }
+
+            productFound.title = data.title;
+            productFound.description = data.description;
+            productFound.code = data.code;
+            productFound.price = data.price;
+            productFound.status = data.status;
+            productFound.stock = data.stock;
+            productFound.category = data.category;
+            
+            await productFound.save();
+
+            return productFound;
+
+        } catch (error) {
+            throw new Error(error.message);
         }
-        
     }
+
 }
     
 

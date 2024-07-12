@@ -2,20 +2,24 @@ import { Router } from "express";
 import { productManager } from "../server.js";
 const router = Router();
 
+import {
+    ERROR_INVALID_ID,
+    ERROR_NOT_FOUND_ID,
+} from "../constants/messages.constant.js";
+
+const errorHandler = (res, message) => {
+    if (message === ERROR_INVALID_ID) return res.status(400).json({ status: false, message: ERROR_INVALID_ID });
+    if (message === ERROR_NOT_FOUND_ID) return res.status(404).json({ status: false, message: ERROR_NOT_FOUND_ID });
+    return res.status(500).json({ status: false, message });
+};
+
 
 router.get("/", async (req, res) => {
-    const { limit } = req.query;
-    const limitInt = parseInt(limit);
-
-    if (limit && isNaN(limitInt)) {
-        return res.status(400).json({ status: "error", message: "Limit debe ser un número entero" });
-    }
-
     try {
-        const products = await productManager.getProducts(limitInt);
-        res.status(200).json(products);
+        const productsFound = await productManager.getProducts(req.query);
+        res.status(200).json({ status: true, payload: productsFound });
     } catch (error) {
-        res.status(500).json({ status: "error", message: "Error al obtener los productos", error: error.message });
+        errorHandler(res, error.message);
     }
 });
 
@@ -25,40 +29,35 @@ router.get("/:pid", async (req, res) => {
 
     try{
         const product =  await productManager.getProductById(pid);
-        res.status(200).json(product)
+        res.status(200).json({ status: true, payload: product });
     } catch( error){
-        res.status(500).json({ status: "error", message: `Error al obtener el producto con el id: ${id}`, error: error.message });
+        errorHandler(res, error.message);
     }
 })
-
 
 
 router.post("/", async (req, res) => {
-    const {title, description, code, price, status, stock, category, thumbnails} = req.body;
+    // const {title, description, code, price, status, stock, category, thumbnails} = req.body;
     try{
-        const response = await productManager.addProducts({title, description, code, price, status, stock, category, thumbnails})
-        res.status(201).json(response)
+        // const response = await productManager.addProducts({title, description, code, price, status, stock, category, thumbnails})
+        const productCreated = await productManager.addProducts(req.body)
+        res.status(201).json({ status: true, payload: productCreated });
     } catch(error){
-        res.status(500).json({ status: "error", message: `No se pudo agregar el producto`, error: error.message });
+        errorHandler(res, error.message);
     }
 })
 
 
-// La ruta DELETE /:pid deberá eliminar el producto con el pid indicado. 
+
 router.delete("/:pid", async (req, res) =>{   
     const { pid } = req.params
 
-
     try{
-        const response = await productManager.deleteProducts(pid)
+        const productDeleted = await productManager.deleteProducts(pid)
+        res.status(200).json({ status: true, payload: productDeleted });
 
-        if(response){
-            res.status(200).send({ message: 'Producto eliminado' })
-        } else{
-            res.status(404).send({ message: 'Producto no encontrado' })
-        }
     } catch(error){
-        res.status(500).send({ status: 500, message: 'Error al eliminar el producto', error: error.message });
+        errorHandler(res, error.message);
     }
 
 })
@@ -69,14 +68,10 @@ router.put("/:pid", async (req, res) => {
     const newData = req.body
 
     try{
-        const response = await productManager.updateProduct(pid, newData);
-        if(response){
-            res.status(200).json(response)
-        } else{
-            res.status(404).json({ status: 404, message: 'Producto no encontrado' })
-        }
+        const productUpdated = await productManager.updateProduct(pid, newData);
+        res.status(200).json({ status: true, payload: productUpdated });
     } catch(error){
-        res.status(500).json({ status: 504, message: 'Error al actualizar el producto', error: error.message })
+        errorHandler(res, error.message);
     }
     
 })

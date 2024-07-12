@@ -1,17 +1,68 @@
     <div class="container">
       <h1 class="my-4">Listado de productos</h1>
-      <div class="row">
-        {{#each products}}
-          <div class="col-sm-6">
-              <div class="card">
-                  <div class="card-body">
-                      <h3 class="card-title">{{this.title}}</h3>
-                      <p class="card-text">$<strong>${{this.price}}</strong></p>
-                      <p class="card-text">Stock:{{this.stock}}</p>
-                      <p class="card-text">{{this.description}}</p>
-                  </div>
-              </div>
-          </div>    
-        {{/each}}
+
+      <div class="controls row">
+        <div class="d-flex p-2 justify-content-between">
+          <div class="order">
+            {{#if products.hasPrevPage}}
+              <a href="?page={{products.prevPage}}"><button>Anterior</button></a>
+              {{/if}}
+
+              {{#if products.hasNextPage}}
+              <a href="?page={{products.nextPage}}{{data.sort}}"><button>Siguiente</button></a>
+              {{/if}}
+
+              <a href="?page={{products.page}}&sort=asc"><button>ASC</button></a>
+              <a href="?page={{products.page}}&sort=desc"><button>DESC</button></a>
+              <a href="?page={{products.page}}"><button>Reset</button></a>
+            </div>
+            <div class="results">
+                <p class"d-flex" >
+                    Página <span id="page">{{products.page}}</span> de <span id="total-pages">{{products.totalPages}}</span>
+            
+                    <span style="margin-left:13px;">{{products.totalDocs}}</span> Documentos
+                </p>
+            </div>
+          </div>
+
+      </div>
+
+
+
+      <div class="products row">
+       <table class="table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Price</th>
+              <th>Category</th>
+              <th>Stock</th>
+              <th>Description</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each products.docs}}
+            <tr>
+              
+                <td>
+                  
+                    {{this.title}}
+
+                </td>
+                <td>${{this.price}}</td>
+                <td>{{this.category}}</td>
+                <td>{{this.stock}}</td>
+                <td>{{this.description}}</td>
+                <td>
+                     <form action="http://localhost:8080/api/carts/66915fb98073d5166ebe6283/product/{{this._id}}" method="post">
+                          <input type="submit" class="btn btn-dark" value="Agregar al carrito">
+                      </form>
+                </td>
+
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
     </div>
     </ul>
