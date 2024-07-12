@@ -38,7 +38,7 @@
     const cargarProductos = (products) => {
         const productsContainer = document.querySelector('.product-list .row');
         productsContainer.innerHTML = '';
-        products.forEach((product) => {
+        products.docs.forEach((product) => {
             const productCard = `
             <div class="col-sm-6">
                 <div class="card">

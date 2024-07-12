@@ -6,8 +6,13 @@ const config = async ( serverHTTP ) => {
     const socketServer = new Server( serverHTTP );
 
     const emitProducts = async () => {
-        const products = await productManager.getProducts();
-        socketServer.emit('products', products);
+        try {
+            const products = await productManager.getProducts();
+            await socketServer.emit('products', products);    
+        } catch (error) {
+            console.log(error)
+        }
+        
     };
     
     socketServer.on("connection", ( socket ) => {

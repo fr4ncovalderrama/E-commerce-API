@@ -17,7 +17,7 @@ export default class ProductManager{
         this.#productModel = ProductModel;
     }
     
-    getProducts = async (paramFilters) => {
+    getProducts = async (paramFilters = {}) => {
         try {
             
             const $and = [];
